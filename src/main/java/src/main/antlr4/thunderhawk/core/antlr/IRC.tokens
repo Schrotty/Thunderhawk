@@ -1,0 +1,6 @@
+DLIMIT=1
+WORD=2
+WHITESPACE=3
+CHAR=4
+':'=1
+' '=3

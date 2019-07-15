@@ -1,0 +1,103 @@
+trigger:
+- master
+
+jobs:
+- job: A
+  pool:
+    vmImage: 'ubuntu-latest'
+  displayName: 'Assemble Thunderhawk'
+  steps:
+    - task: Bash@3
+      displayName: 'Install sbt'
+      inputs:
+        targetType: 'inline'
+        script: 'echo "deb https://dl.bintray.com/sbt/debian /" | sudo tee -a /etc/apt/sources.list.d/sbt.list && sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 642AC823 && sudo apt-get update && sudo apt-get install sbt'
+
+    - task: Bash@3
+      displayName: 'Assemble Application'
+      inputs:
+        targetType: 'inline'
+        script: 'sbt assembly'
+
+    - task: CopyFiles@2
+      displayName: 'Copy Files'
+      inputs:
+        SourceFolder: '$(system.defaultworkingdirectory)'
+        Contents: 'target/scala-2.13/*.jar'
+        TargetFolder: '$(build.artifactstagingdirectory)'
+        CleanTargetFolder: true
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: ScalaIRC'
+      inputs:
+        PathtoPublish: '$(build.artifactstagingdirectory)'
+        ArtifactName: thunder
+
+- job: B
+  displayName: 'Prepare Test Environment'
+  dependsOn: A
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download scalaIRC'
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: 'thunder'
+      downloadPath: '$(System.ArtifactsDirectory)'
+
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download punkIRC'
+    inputs:
+      buildType: 'specific'
+      project: 'a6a25cf0-005d-4291-b9a0-5abb6c4afdef'
+      pipeline: '6'
+      buildVersionToDownload: 'latestFromBranch'
+      branchName: 'refs/heads/master'
+      downloadType: 'single'
+      artifactName: 'punkIRC'
+      downloadPath: '$(System.ArtifactsDirectory)'
+
+  - task: CopyFiles@2
+    displayName: 'Copy Thunderhawk'
+    inputs:
+      SourceFolder: '$(System.ArtifactsDirectory)/thunder/target/scala-2.13'
+      Contents: '**'
+      TargetFolder: '$(System.ArtifactsDirectory)/thunder-test'
+
+  - task: CopyFiles@2
+    displayName: 'Copy punkIRC'
+    inputs:
+      SourceFolder: '$(System.ArtifactsDirectory)/punkIRC/target/pricefield'
+      Contents: '**'
+      TargetFolder: '$(System.ArtifactsDirectory)/thunder-test'
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: '$(System.ArtifactsDirectory)/thunder-test'
+      artifact: 'testENV'
+
+- job: C
+  displayName: 'Test Thunderhawk'
+  dependsOn: B
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - task: DownloadPipelineArtifact@2
+    inputs:
+      buildType: 'current'
+      targetPath: '$(Pipeline.Workspace)/thunder-test'
+      artifactName: 'testENV'
+
+  - task: Bash@3
+    displayName: 'Execute Tests'
+    inputs:
+      targetType: 'inline'
+      script: 'cd $(Pipeline.Workspace)/thunder-test && java -jar priceIRC.jar -e="thunder.jar" -p="6667" -t="Ping" -nvc -j || echo "Done!"'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact: results'
+    inputs:
+      PathtoPublish: '$(Pipeline.Workspace)/thunder-test/logs'
+      ArtifactName: results
