@@ -19,7 +19,8 @@ class ClientHandler extends Actor {
   }
 
   def receive: Receive = {
-    case Received(data) => parser ! ParseRequest(data.decodeString("ASCII"))
+    //case Received(data) => parser ! ParseRequest(data.decodeString("ASCII"))
+    case Received(data) => sender() ! Write(data)
     case response: UserResponse => client.username = response.username
     case response: NickResponse => client.nickname = response.nickname
 
