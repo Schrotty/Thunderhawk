@@ -94,7 +94,7 @@ jobs:
     displayName: 'Execute Tests'
     inputs:
       targetType: 'inline'
-      script: 'cd $(Pipeline.Workspace)/thunder-test && java -jar priceIRC.jar -e="thunder.jar" -p="6667" -t="Ping" -nvc -j || echo "Done!"'
+      script: 'cd $(Pipeline.Workspace)/thunder-test && java -jar priceIRC.jar -e="thunder.jar" -p="6667" -t="Ping" -nvc -j -r || echo "Done!"'
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Artifact: results'
