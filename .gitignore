@@ -122,3 +122,9 @@ project/plugins/project/
 ### Scala ###
 
 # End of https://www.gitignore.io/api/sbt,java,scala,intellij+iml
+/antlr.sh
+.idea/.name
+.idea/sbt.xml
+.idea/scala_compiler.xml
+antlr.sh
+src/test/

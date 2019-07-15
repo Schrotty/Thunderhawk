@@ -28,7 +28,7 @@ jobs:
         CleanTargetFolder: true
 
     - task: PublishBuildArtifacts@1
-      displayName: 'Publish Artifact: ScalaIRC'
+      displayName: 'Publish Artifact: Thunderhawk'
       inputs:
         PathtoPublish: '$(build.artifactstagingdirectory)'
         ArtifactName: thunder
@@ -101,3 +101,10 @@ jobs:
     inputs:
       PathtoPublish: '$(Pipeline.Workspace)/thunder-test/logs'
       ArtifactName: results
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '**/TEST-*.xml'
+      searchFolder: '$(Pipeline.Workspace)/thunder-test/logs'
+      testRunTitle: 'Thunderhawk results'
